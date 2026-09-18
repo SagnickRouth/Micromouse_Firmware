@@ -31,13 +31,14 @@ static const char *dip_name(uint8_t dip)
 
 void hardware_test_init(void)
 {
-    /*
-     * CubeMX must own peripheral initialization. Do not call the old
-     * timer.c/i2c.c manual init functions from this diagnostic.
-     */
+    /* LED is toggled before any I2C transaction so MCU execution can be
+       verified even if the OLED is disconnected or miswired. */
+    HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
+    HAL_Delay(100);
+    HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
+
     encoder_init();
     oled_init();
-    HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
 }
 
 void hardware_test_run(void)
