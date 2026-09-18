@@ -22,6 +22,7 @@
 #include "motor.h"
 #include "motion.h"
 #include "encoder.h"
+#include "speed_control.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
