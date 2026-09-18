@@ -20,7 +20,11 @@ static uint32_t profile_last_ms;
 
 static float ticks_to_distance(int32_t ticks)
 {
-    return encoder_ticks_to_mm(ticks);
+    /* Motion calibration is deliberately separate from speed calibration.
+     * The assembled robot has shown a different effective count scale during
+     * straight motion than the nominal encoder speed scale. */
+    return (float)ticks *
+           ((3.14159265f * WHEEL_DIAMETER_MM) / MOTION_TICKS_PER_REV);
 }
 
 static float average_distance(void)
@@ -149,10 +153,10 @@ void motion_update(void)
         if (right_target < 0.0f) right_target = 0.0f;
 
         /*
-         * In the final 8 mm, actively command zero wheel speed so the speed
-         * PID brakes the robot instead of cutting PWM at 40 mm/s.
+         * Start active braking earlier. At the current test speed, an 8 mm
+         * braking window is too short to absorb drivetrain inertia.
          */
-        if (error <= 8.0f) {
+        if (error <= 20.0f) {
             speed_control_update(0.0f, 0.0f);
             if (fabsf(encoder_get_left_speed()) < 8.0f &&
                 fabsf(encoder_get_right_speed()) < 8.0f) {
