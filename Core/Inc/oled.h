@@ -15,6 +15,8 @@ void oled_show_message(const char *line1, const char *line2);
 void oled_show_hardware_test(bool button_pressed, uint8_t dip,
                              const char *algorithm,
                              const char *left_count,
-                             const char *right_count);
+                             const char *right_count,
+                             const char *left_speed,
+                             const char *right_speed);
 
 #endif
