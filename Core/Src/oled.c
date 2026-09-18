@@ -138,7 +138,9 @@ void oled_show_algorithm(const char *name, bool running)
 void oled_show_hardware_test(bool button_pressed, uint8_t dip,
                             const char *algorithm,
                             const char *left_count,
-                            const char *right_count)
+                            const char *right_count,
+                            const char *left_speed,
+                            const char *right_speed)
 {
     memset(fb, 0, sizeof(fb));
 
@@ -151,8 +153,10 @@ void oled_show_hardware_test(bool button_pressed, uint8_t dip,
              (unsigned)(dip & 3U), algorithm);
     text(dip_line, 2, 25, 1);
 
-    text(left_count, 2, 39, 1);
-    text(right_count, 68, 39, 1);
+    text(left_count, 2, 36, 1);
+    text(right_count, 68, 36, 1);
+    text(left_speed, 2, 50, 1);
+    text(right_speed, 68, 50, 1);
 
     refresh();
 }
