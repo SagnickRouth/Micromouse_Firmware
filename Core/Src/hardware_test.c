@@ -53,6 +53,7 @@ void hardware_test_run(void)
     static uint32_t button_change_ms = 0U;
     static bool start_pending = false;
     static uint32_t start_delay_ms = 0U;
+    static bool next_test_is_turn = false;
 
     const uint32_t now = HAL_GetTick();
 
@@ -74,7 +75,7 @@ void hardware_test_run(void)
      *   - A debounced PA0 press starts a 3-second stationary countdown.
      *   - The encoder is reset only when the move actually starts.
      *   - PA0 is ignored while the move runs; a new press while moving stops it.
-     *   - After completion, release and press PA0 again for another run.
+     *   - Completed tests alternate: 180 mm cell, then 90-degree right turn.
      */
     if (button_pressed != button_last_raw) {
         button_last_raw = button_pressed;
@@ -97,7 +98,12 @@ void hardware_test_run(void)
 
     if (start_pending && (now - start_delay_ms) >= 3000U) {
         start_pending = false;
-        motion_move_cell();
+        if (next_test_is_turn) {
+            motion_turn_right();
+        } else {
+            motion_move_cell();
+        }
+        next_test_is_turn = !next_test_is_turn;
     }
 
     /* OLED is deliberately refreshed slowly to keep I2C traffic low. */
