@@ -177,7 +177,7 @@ void motion_update(void)
         3.14159265f * WHEEL_TRACK_MM *
         fabsf(target_angle) / 360.0f;
     const float mm_per_motion_tick =
-        (3.14159265f * WHEEL_DIAMETER_MM) / MOTION_TICKS_PER_REV;
+        (3.14159265f * WHEEL_DIAMETER_MM) / TURN_TICKS_PER_REV;
 
     const int32_t dl_ticks = encoder_get_left_count() - start_left;
     const int32_t dr_ticks = encoder_get_right_count() - start_right;
