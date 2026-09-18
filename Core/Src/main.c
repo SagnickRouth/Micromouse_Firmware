@@ -115,8 +115,10 @@ int main(void)
    * CubeMX owns all peripheral initialization above. The diagnostic layer
    * only consumes the initialized GPIO, I2C1, TIM1 and TIM4 peripherals.
    */
-  hardware_test_init();
   encoder_init();
+  speed_control_init();
+  motion_init();
+  hardware_test_init();
 
   /* USER CODE END 2 */
 
