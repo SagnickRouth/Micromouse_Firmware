@@ -68,10 +68,11 @@ typedef struct {
 #define ENCODER_RIGHT_INVERTED false
 #define ENCODER_CPR           12
 #define ENCODER_GEAR_RATIO    100
-#define ENCODER_TICKS_PER_REV (ENCODER_CPR * ENCODER_GEAR_RATIO)
-#define WHEEL_DIAMETER_MM     25.0f
-#define WHEEL_TRACK_MM        75.0f
-#define MM_PER_TICK           ((3.14159265f * WHEEL_DIAMETER_MM) / ENCODER_TICKS_PER_REV)
+/* Measured on the assembled robot: one wheel revolution is ~1400-1419 ticks. */
+#define ENCODER_TICKS_PER_REV  1409.5f
+#define WHEEL_DIAMETER_MM      25.0f
+#define WHEEL_TRACK_MM         75.0f
+#define MM_PER_TICK            ((3.14159265f * WHEEL_DIAMETER_MM) / ENCODER_TICKS_PER_REV)
 
 /* ===================== I2C BUS ===================== */
 #define I2C1_SCL_PORT         GPIOB
@@ -163,8 +164,9 @@ typedef enum {
 #define SPEED_TEST_TARGET_MMPS  180.0f
 #define SEARCH_SPEED_MMPS        200
 #define TURN_SPEED_MMPS          150
-#define ACCEL_MMPS2              1000
-#define DECEL_MMPS2              1000
+#define CELL_MOVE_SPEED_MMPS     100.0f
+#define ACCEL_MMPS2              500
+#define DECEL_MMPS2              1500
 #define TURN_ANGLE_90            90.0f
 #define TURN_ANGLE_180           180.0f
 #define TURN_DEADBAND_DEG        2.0f
