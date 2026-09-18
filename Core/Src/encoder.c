@@ -27,8 +27,8 @@ void encoder_update(void)
     int16_t dl = (int16_t)(l - last_left);
     int16_t dr = (int16_t)(r - last_right);
 
-    uint32_t now = HAL_GetTick();
-    uint32_t elapsed_ms = now - last_update_ms;
+    const uint32_t now = HAL_GetTick();
+    const uint32_t elapsed_ms = now - last_update_ms;
 
     if (ENCODER_LEFT_INVERTED)  dl = (int16_t)-dl;
     if (ENCODER_RIGHT_INVERTED) dr = (int16_t)-dr;
@@ -36,16 +36,25 @@ void encoder_update(void)
     count_left += dl;
     count_right += dr;
 
+    speed_delta_left += dl;
+    speed_delta_right += dr;
+
     last_left = l;
     last_right = r;
 
-    if (elapsed_ms == 0U) {
+    /*
+     * Accumulate ticks over a 10 ms or longer window. This prevents
+     * quantization/zero-speed readings caused by very small per-loop deltas.
+     */
+    if (elapsed_ms < 10U)
         return;
-    }
 
     const float dt = (float)elapsed_ms * 0.001f;
-    speed_left = encoder_ticks_to_mm(dl) / dt;
-    speed_right = encoder_ticks_to_mm(dr) / dt;
+    speed_left = encoder_ticks_to_mm(speed_delta_left) / dt;
+    speed_right = encoder_ticks_to_mm(speed_delta_right) / dt;
+
+    speed_delta_left = 0;
+    speed_delta_right = 0;
     last_update_ms = now;
 }
 
