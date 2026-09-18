@@ -28,6 +28,9 @@ void encoder_update(void)
     uint32_t now = HAL_GetTick();
     uint32_t elapsed_ms = now - last_update_ms;
 
+    if (ENCODER_LEFT_INVERTED)  dl = (int16_t)-dl;
+    if (ENCODER_RIGHT_INVERTED) dr = (int16_t)-dr;
+
     count_left += dl;
     count_right += dr;
 
