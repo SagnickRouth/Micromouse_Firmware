@@ -21,6 +21,12 @@ void motor_set_left(int16_t speed);
 /** Set right motor speed. Positive = forward, negative = backward. */
 void motor_set_right(int16_t speed);
 
+/** Set both motor commands at once. */
+void motor_set(int16_t left_speed, int16_t right_speed);
+
+/** Stop both motors and leave the driver disabled. */
+void motor_stop(void);
+
 /** Enable motor driver (STBY high). */
 void motor_enable(void);
 
