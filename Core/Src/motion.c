@@ -120,15 +120,16 @@ void motion_update(void)
         profile_last_ms = now;
         const float accel_step = ACCEL_MMPS2 * profile_dt;
         const float decel_speed = sqrtf(fmaxf(0.0f, 2.0f * DECEL_MMPS2 * fabsf(error)));
-        const float speed_limit = fminf((float)SEARCH_SPEED_MMPS, decel_speed);
+        const float speed_limit = fminf((float)CELL_MOVE_SPEED_MMPS, decel_speed);
 
         if (commanded_speed_mmps < speed_limit)
             commanded_speed_mmps = fminf(commanded_speed_mmps + accel_step, speed_limit);
         else
             commanded_speed_mmps = fmaxf(commanded_speed_mmps - accel_step, speed_limit);
 
-        if (commanded_speed_mmps < 40.0f)
-            commanded_speed_mmps = 40.0f;
+        /* Allow the speed command to fall to zero for controlled braking. */
+        if (error > 5.0f && commanded_speed_mmps < 25.0f)
+            commanded_speed_mmps = 25.0f;
 
         const int32_t dl = encoder_get_left_count() - start_left;
         const int32_t dr = encoder_get_right_count() - start_right;
@@ -145,7 +146,19 @@ void motion_update(void)
         if (left_target < 0.0f) left_target = 0.0f;
         if (right_target < 0.0f) right_target = 0.0f;
 
-        speed_control_update(left_target, right_target);
+        /*
+         * In the final 8 mm, actively command zero wheel speed so the speed
+         * PID brakes the robot instead of cutting PWM at 40 mm/s.
+         */
+        if (error <= 8.0f) {
+            speed_control_update(0.0f, 0.0f);
+            if (fabsf(encoder_get_left_speed()) < 8.0f &&
+                fabsf(encoder_get_right_speed()) < 8.0f) {
+                motion_stop();
+            }
+        } else {
+            speed_control_update(left_target, right_target);
+        }
         return;
     }
 
