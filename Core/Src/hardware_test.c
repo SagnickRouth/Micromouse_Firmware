@@ -89,9 +89,13 @@ void hardware_test_run(void)
 
     char l[24];
     char r[24];
+    char ls[24];
+    char rs[24];
 
     snprintf(l, sizeof(l), "L:%ld", (long)encoder_get_left_count());
     snprintf(r, sizeof(r), "R:%ld", (long)encoder_get_right_count());
+    snprintf(ls, sizeof(ls), "LS:%ld", (long)encoder_get_left_speed());
+    snprintf(rs, sizeof(rs), "RS:%ld", (long)encoder_get_right_speed());
 
-    oled_show_hardware_test(button_pressed, dip, dip_name(dip), l, r);
+    oled_show_hardware_test(button_pressed, dip, dip_name(dip), l, r, ls, rs);
 }
