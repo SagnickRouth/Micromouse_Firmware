@@ -85,8 +85,6 @@ void motion_update(void)
     if (!moving && !turning)
         return;
 
-    encoder_update();
-
     if ((HAL_GetTick() - motion_start_ms) >= TURN_TIMEOUT_MS) {
         motion_stop();
         return;
