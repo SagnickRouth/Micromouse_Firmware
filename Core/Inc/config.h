@@ -64,6 +64,8 @@ typedef struct {
 #define ENC_RIGHT_B_PORT      GPIOB
 #define ENC_RIGHT_B_PIN       GPIO_PIN_7
 
+#define ENCODER_LEFT_INVERTED  true
+#define ENCODER_RIGHT_INVERTED false
 #define ENCODER_CPR           12
 #define ENCODER_GEAR_RATIO    100
 #define ENCODER_TICKS_PER_REV (ENCODER_CPR * ENCODER_GEAR_RATIO)
