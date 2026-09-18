@@ -160,6 +160,7 @@ typedef enum {
 #define PID_TURN_MIN            -600
 #define PID_TURN_MAX             600
 #define MAX_SPEED_MMPS           500
+#define SPEED_TEST_TARGET_MMPS  180.0f
 #define SEARCH_SPEED_MMPS        200
 #define TURN_SPEED_MMPS          150
 #define ACCEL_MMPS2              1000
