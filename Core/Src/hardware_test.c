@@ -2,6 +2,7 @@
 #include "config.h"
 #include "encoder.h"
 #include "motor.h"
+#include "speed_control.h"
 #include "oled.h"
 #include "stm32f4xx_hal.h"
 #include <stdio.h>
@@ -40,6 +41,7 @@ void hardware_test_init(void)
 
     encoder_init();
     oled_init();
+    speed_control_init();
 }
 
 void hardware_test_run(void)
@@ -51,9 +53,7 @@ void hardware_test_run(void)
 
     const uint32_t now = HAL_GetTick();
 
-    /* Update software encoder accumulators continuously. */
-    encoder_update();
-
+    /* Encoder state is updated once by the main control loop. */
     /* 250 ms heartbeat proves the MCU main loop is alive. */
     if ((now - last_led_ms) >= 250U) {
         last_led_ms = now;
@@ -62,30 +62,24 @@ void hardware_test_run(void)
                           led_state ? GPIO_PIN_RESET : GPIO_PIN_SET);
     }
 
+    const bool button_pressed =
+        (HAL_GPIO_ReadPin(KEY_PORT, KEY_PIN) == GPIO_PIN_RESET);
+    const uint8_t dip = dip_read();
+
+    /* Closed-loop speed test: hold PA0 for 180 mm/s on both wheels. */
+    if (button_pressed) {
+        motor_test_active = true;
+        speed_control_update(SPEED_TEST_TARGET_MMPS, SPEED_TEST_TARGET_MMPS);
+    } else if (motor_test_active) {
+        motor_test_active = false;
+        speed_control_stop();
+    }
+
     /* OLED is deliberately refreshed slowly to keep I2C traffic low. */
     if ((now - last_ui_ms) < 100U)
         return;
 
     last_ui_ms = now;
-
-    const bool button_pressed =
-        (HAL_GPIO_ReadPin(KEY_PORT, KEY_PIN) == GPIO_PIN_RESET);
-    const uint8_t dip = dip_read();
-
-    /*
-     * Safe motor test:
-     *   - Hold PA0 button: both wheels run slowly forward.
-     *   - Release PA0: motors stop immediately.
-     * The command is deliberately low PWM for initial wiring verification.
-     */
-    if (button_pressed && !motor_test_active) {
-        motor_test_active = true;
-        motor_enable();
-        motor_set(180, 180);
-    } else if (!button_pressed && motor_test_active) {
-        motor_test_active = false;
-        motor_stop();
-    }
 
     char l[24];
     char r[24];
