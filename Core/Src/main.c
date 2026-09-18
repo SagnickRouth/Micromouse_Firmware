@@ -21,6 +21,7 @@
 #include "hardware_test.h"
 #include "motor.h"
 #include "motion.h"
+#include "encoder.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -114,6 +115,7 @@ int main(void)
    * only consumes the initialized GPIO, I2C1, TIM1 and TIM4 peripherals.
    */
   hardware_test_init();
+  encoder_init();
 
   /* USER CODE END 2 */
 
@@ -121,6 +123,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /* Update encoder state exactly once per main-loop iteration. */
+    encoder_update();
+
     /* Motion controller is idle until a motion command is issued. */
     motion_update();
     hardware_test_run();
