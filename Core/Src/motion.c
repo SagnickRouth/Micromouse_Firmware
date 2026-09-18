@@ -168,44 +168,54 @@ void motion_update(void)
         return;
     }
 
-    /* Encoder-based in-place turn. The wheel travel required for an
-     * in-place rotation is arc_length = pi * track * angle / 360.
-     * Use the existing wheel-speed PID during the turn so the robot can
-     * actively decelerate instead of relying on a fixed minimum PWM. */
+    /* Encoder-based in-place turn. Use the calibrated motion tick scale
+     * directly and a bounded PWM profile. This deliberately avoids feeding
+     * signed turn commands through the wheel-speed PID: the speed PID was
+     * tuned for forward wheel motion and can produce unstable behavior when
+     * both wheels are commanded in opposite directions. */
     const float wheel_distance =
         3.14159265f * WHEEL_TRACK_MM *
         fabsf(target_angle) / 360.0f;
+    const float mm_per_motion_tick =
+        (3.14159265f * WHEEL_DIAMETER_MM) / MOTION_TICKS_PER_REV;
 
     const int32_t dl_ticks = encoder_get_left_count() - start_left;
     const int32_t dr_ticks = encoder_get_right_count() - start_right;
-    const float left_dist = ticks_to_distance(dl_ticks);
-    const float right_dist = ticks_to_distance(dr_ticks);
-    const float turned = 0.5f * (fabsf(left_dist) + fabsf(right_dist));
+    const float left_dist = fabsf((float)dl_ticks * mm_per_motion_tick);
+    const float right_dist = fabsf((float)dr_ticks * mm_per_motion_tick);
+    const float turned = 0.5f * (left_dist + right_dist);
 
     if (turned >= wheel_distance) {
-        speed_control_update(0.0f, 0.0f);
-        if (fabsf(encoder_get_left_speed()) < 8.0f &&
-            fabsf(encoder_get_right_speed()) < 8.0f) {
-            motion_stop();
-        }
+        /* Hard dynamic brake removes the remaining rotational momentum. */
+        motor_enable();
+        motor_brake();
+        HAL_Delay(60U);
+        motion_stop();
         return;
     }
 
     const float remaining = wheel_distance - turned;
-    const float decel_speed = sqrtf(fmaxf(0.0f,
-                                          2.0f * DECEL_MMPS2 * remaining));
-    float turn_speed = fminf((float)TURN_SPEED_MMPS, decel_speed);
+    const float braking_distance = 12.0f;
+    float pwm = (float)TURN_SPEED_MMPS;
 
-    /* Keep enough command to overcome static friction while there is still
-     * meaningful distance remaining; remove that minimum near the target so
-     * the encoder-based stop is not followed by a large overshoot. */
-    if (remaining > 12.0f && turn_speed < 35.0f)
-        turn_speed = 35.0f;
+    /* Convert the requested turn speed into a conservative PWM command.
+     * The exact PWM-to-speed relationship is not linear, so keep this
+     * intentionally bounded and use encoder position for the stop point. */
+    pwm = 260.0f;
+    if (remaining < braking_distance) {
+        pwm = 260.0f * (remaining / braking_distance);
+        if (pwm < 70.0f) pwm = 70.0f;
+    }
+
+    const int16_t command = (int16_t)pwm;
+    motor_enable();
 
     if (target_angle > 0.0f) {
-        speed_control_update(turn_speed, -turn_speed);
+        motor_set_left(command);
+        motor_set_right((int16_t)-command);
     } else {
-        speed_control_update(-turn_speed, turn_speed);
+        motor_set_left((int16_t)-command);
+        motor_set_right(command);
     }
 
 }
