@@ -16,6 +16,7 @@ static float target_angle;
 static int32_t start_left;
 static int32_t start_right;
 static uint32_t motion_start_ms;
+static uint32_t profile_last_ms;
 
 static float ticks_to_distance(int32_t ticks)
 {
@@ -57,6 +58,7 @@ void motion_move(float distance_mm, float end_speed)
     commanded_speed_mmps = 0.0f;
     target_angle = 0.0f;
     motion_start_ms = HAL_GetTick();
+    profile_last_ms = motion_start_ms;
     moving = true;
     turning = false;
     pid_reset(&distance_pid);
@@ -106,13 +108,19 @@ void motion_update(void)
         }
 
         /*
-         * Trapezoidal-style speed profile:
-         * accelerate toward MAX_SPEED_MMPS, then limit speed from the
-         * remaining distance so the robot can decelerate before the target.
+         * Trapezoidal-style speed profile. Update the profile from elapsed
+         * wall-clock time rather than assuming motion_update() is called at
+         * CONTROL_DT; the main loop runs much faster than 1 ms.
          */
-        const float accel_step = ACCEL_MMPS2 * CONTROL_DT;
+        const uint32_t profile_elapsed_ms = now - profile_last_ms;
+        if (profile_elapsed_ms < 10U)
+            return;
+
+        const float profile_dt = (float)profile_elapsed_ms * 0.001f;
+        profile_last_ms = now;
+        const float accel_step = ACCEL_MMPS2 * profile_dt;
         const float decel_speed = sqrtf(fmaxf(0.0f, 2.0f * DECEL_MMPS2 * fabsf(error)));
-        const float speed_limit = fminf((float)MAX_SPEED_MMPS, decel_speed);
+        const float speed_limit = fminf((float)SEARCH_SPEED_MMPS, decel_speed);
 
         if (commanded_speed_mmps < speed_limit)
             commanded_speed_mmps = fminf(commanded_speed_mmps + accel_step, speed_limit);
