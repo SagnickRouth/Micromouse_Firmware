@@ -93,7 +93,9 @@ void motion_update(void)
 
     const uint32_t now = HAL_GetTick();
 
-    if ((now - motion_start_ms) >= TURN_TIMEOUT_MS) {
+    /* Turn timeout is only applicable to turns. A straight cell move can
+     * legitimately take longer because its speed profile includes braking. */
+    if (turning && (now - motion_start_ms) >= TURN_TIMEOUT_MS) {
         motion_stop();
         return;
     }
