@@ -2,11 +2,13 @@
 #include "encoder.h"
 #include "motor.h"
 #include "pid.h"
+#include "speed_control.h"
 #include <math.h>
 
 RobotPose robot_pose = {0U, 0U, DIR_NORTH, 0.0f, 0.0f};
 
 static PidController distance_pid;
+static float commanded_speed_mmps;
 static bool moving;
 static bool turning;
 static float target_distance;
@@ -35,6 +37,7 @@ static void reset_motion_state(void)
     target_angle = 0.0f;
     pid_reset(&distance_pid);
     motor_stop();
+    speed_control_stop();
 }
 
 void motion_init(void)
@@ -51,6 +54,7 @@ void motion_move(float distance_mm, float end_speed)
     start_left = 0;
     start_right = 0;
     target_distance = distance_mm;
+    commanded_speed_mmps = 0.0f;
     target_angle = 0.0f;
     motion_start_ms = HAL_GetTick();
     moving = true;
@@ -85,12 +89,12 @@ void motion_update(void)
     if (!moving && !turning)
         return;
 
-    if ((HAL_GetTick() - motion_start_ms) >= TURN_TIMEOUT_MS) {
+    const uint32_t now = HAL_GetTick();
+
+    if ((now - motion_start_ms) >= TURN_TIMEOUT_MS) {
         motion_stop();
         return;
     }
-
-    const float max_pwm = (float)MOTOR_PWM_MAX;
 
     if (moving) {
         const float travelled = average_distance();
@@ -101,23 +105,44 @@ void motion_update(void)
             return;
         }
 
-        float command = KP_SPEED * error;
-        if (command > max_pwm) command = max_pwm;
-        if (command < -max_pwm) command = -max_pwm;
+        /*
+         * Trapezoidal-style speed profile:
+         * accelerate toward MAX_SPEED_MMPS, then limit speed from the
+         * remaining distance so the robot can decelerate before the target.
+         */
+        const float accel_step = ACCEL_MMPS2 * CONTROL_DT;
+        const float decel_speed = sqrtf(fmaxf(0.0f, 2.0f * DECEL_MMPS2 * fabsf(error)));
+        const float speed_limit = fminf((float)MAX_SPEED_MMPS, decel_speed);
+
+        if (commanded_speed_mmps < speed_limit)
+            commanded_speed_mmps = fminf(commanded_speed_mmps + accel_step, speed_limit);
+        else
+            commanded_speed_mmps = fmaxf(commanded_speed_mmps - accel_step, speed_limit);
+
+        if (commanded_speed_mmps < 40.0f)
+            commanded_speed_mmps = 40.0f;
 
         const int32_t dl = encoder_get_left_count() - start_left;
         const int32_t dr = encoder_get_right_count() - start_right;
         const float sync_error = ticks_to_distance(dl - dr);
-        const float sync = 2.0f * sync_error;
 
-        motor_enable();
-        motor_set_left((int16_t)(command - sync));
-        motor_set_right((int16_t)(command + sync));
+        /*
+         * Small differential trim keeps the two wheel distances together
+         * while the speed PID controls each wheel's absolute speed.
+         */
+        const float sync_trim = 1.5f * sync_error;
+        float left_target = commanded_speed_mmps - sync_trim;
+        float right_target = commanded_speed_mmps + sync_trim;
+
+        if (left_target < 0.0f) left_target = 0.0f;
+        if (right_target < 0.0f) right_target = 0.0f;
+
+        speed_control_update(left_target, right_target);
         return;
     }
 
     const float wheel_distance =
-        (float)M_PI * (float)WHEEL_TRACK_MM *
+        3.14159265f * WHEEL_TRACK_MM *
         fabsf(target_angle) / 360.0f;
 
     const int32_t dl_ticks = encoder_get_left_count() - start_left;
