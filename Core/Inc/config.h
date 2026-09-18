@@ -68,8 +68,8 @@ typedef struct {
 #define ENCODER_RIGHT_INVERTED false
 #define ENCODER_CPR           12
 #define ENCODER_GEAR_RATIO    100
-/* Measured on the assembled robot: one wheel revolution is ~1400-1419 ticks. */
-#define ENCODER_TICKS_PER_REV  1409.5f
+/* Empirically calibrated from repeated 180 mm cell moves on the assembled robot. */
+#define ENCODER_TICKS_PER_REV  1996.5f
 #define WHEEL_DIAMETER_MM      25.0f
 #define WHEEL_TRACK_MM         75.0f
 #define MM_PER_TICK            ((3.14159265f * WHEEL_DIAMETER_MM) / ENCODER_TICKS_PER_REV)
