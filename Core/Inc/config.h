@@ -69,7 +69,11 @@ typedef struct {
 #define ENCODER_CPR           12
 #define ENCODER_GEAR_RATIO    100
 /* Empirically calibrated from repeated 180 mm cell moves on the assembled robot. */
-#define ENCODER_TICKS_PER_REV  1996.5f
+#define ENCODER_TICKS_PER_REV  1409.5f
+/* Straight-line motion calibration. Derived from the latest 350 mm test:
+ * the same encoder count represented ~350 mm physically, so the motion
+ * controller must use the empirically observed ~1027 counts/rev scale. */
+#define MOTION_TICKS_PER_REV   1027.0f
 #define WHEEL_DIAMETER_MM      25.0f
 #define WHEEL_TRACK_MM         75.0f
 #define MM_PER_TICK            ((3.14159265f * WHEEL_DIAMETER_MM) / ENCODER_TICKS_PER_REV)
