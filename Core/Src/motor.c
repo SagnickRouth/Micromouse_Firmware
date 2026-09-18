@@ -2,6 +2,9 @@
 #include "config.h"
 #include "stm32f4xx_hal.h"
 
+static int16_t left_command;
+static int16_t right_command;
+
 extern TIM_HandleTypeDef htim3;
 
 /*
@@ -16,6 +19,8 @@ static void set_dir(GPIO_TypeDef *port, uint16_t pin, GPIO_PinState state)
 
 void motor_init(void)
 {
+    left_command = 0;
+    right_command = 0;
     HAL_GPIO_WritePin(MOTOR_AIN1_PORT, MOTOR_AIN1_PIN, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(MOTOR_AIN2_PORT, MOTOR_AIN2_PIN, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(MOTOR_BIN1_PORT, MOTOR_BIN1_PIN, GPIO_PIN_RESET);
@@ -39,10 +44,18 @@ static void pwm_right(uint16_t value)
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, value);
 }
 
+static int16_t clamp_speed(int16_t speed)
+{
+    if (speed > (int16_t)MOTOR_PWM_MAX) return (int16_t)MOTOR_PWM_MAX;
+    if (speed < -(int16_t)MOTOR_PWM_MAX) return -(int16_t)MOTOR_PWM_MAX;
+    return speed;
+}
+
 void motor_set_left(int16_t speed)
 {
-    if (speed > MOTOR_PWM_MAX) speed = MOTOR_PWM_MAX;
-    if (speed < -MOTOR_PWM_MAX) speed = -MOTOR_PWM_MAX;
+    speed = clamp_speed(speed);
+    if (MOTOR_LEFT_INVERTED) speed = -speed;
+    left_command = speed;
 
     if (speed > 0) {
         set_dir(MOTOR_AIN1_PORT, MOTOR_AIN1_PIN, GPIO_PIN_SET);
@@ -61,8 +74,9 @@ void motor_set_left(int16_t speed)
 
 void motor_set_right(int16_t speed)
 {
-    if (speed > MOTOR_PWM_MAX) speed = MOTOR_PWM_MAX;
-    if (speed < -MOTOR_PWM_MAX) speed = -MOTOR_PWM_MAX;
+    speed = clamp_speed(speed);
+    if (MOTOR_RIGHT_INVERTED) speed = -speed;
+    right_command = speed;
 
     if (speed > 0) {
         set_dir(MOTOR_BIN1_PORT, MOTOR_BIN1_PIN, GPIO_PIN_SET);
@@ -103,3 +117,16 @@ void motor_brake(void)
     pwm_right(MOTOR_PWM_MAX);
 }
 
+
+void motor_set(int16_t left_speed, int16_t right_speed)
+{
+    motor_set_left(left_speed);
+    motor_set_right(right_speed);
+}
+
+void motor_stop(void)
+{
+    motor_set_left(0);
+    motor_set_right(0);
+    motor_disable();
+}
