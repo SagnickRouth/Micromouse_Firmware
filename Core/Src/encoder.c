@@ -9,6 +9,8 @@ static int32_t count_left, count_right;
 static uint16_t last_left, last_right;
 static float speed_left, speed_right;
 static uint32_t last_update_ms;
+static int32_t speed_delta_left;
+static int32_t speed_delta_right;
 
 void encoder_init(void)
 {
@@ -58,6 +60,8 @@ void encoder_reset(void)
     count_right = 0;
     speed_left = 0.0f;
     speed_right = 0.0f;
+    speed_delta_left = 0;
+    speed_delta_right = 0;
 }
 
 int32_t encoder_get_left_count(void)
