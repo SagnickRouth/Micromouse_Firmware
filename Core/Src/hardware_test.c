@@ -72,8 +72,7 @@ void hardware_test_run(void)
     /*
      * One-cell motion test:
      *   - A debounced PA0 press starts a 3-second stationary countdown.
-     *   - The encoder is reset only when the move actually starts, so the
-     *     countdown cannot contaminate the 180 mm measurement.
+     *   - The encoder is reset only when the move actually starts.
      *   - PA0 is ignored while the move runs; a new press while moving stops it.
      *   - After completion, release and press PA0 again for another run.
      */
@@ -99,7 +98,6 @@ void hardware_test_run(void)
     if (start_pending && (now - start_delay_ms) >= 3000U) {
         start_pending = false;
         motion_move_cell();
-    }
     }
 
     /* OLED is deliberately refreshed slowly to keep I2C traffic low. */
