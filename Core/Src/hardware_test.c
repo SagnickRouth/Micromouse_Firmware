@@ -51,6 +51,8 @@ void hardware_test_run(void)
     static bool button_stable = false;
     static bool button_last_raw = false;
     static uint32_t button_change_ms = 0U;
+    static bool start_pending = false;
+    static uint32_t start_delay_ms = 0U;
 
     const uint32_t now = HAL_GetTick();
 
@@ -69,12 +71,11 @@ void hardware_test_run(void)
 
     /*
      * One-cell motion test:
-     *   - A debounced PA0 press starts one 180 mm move.
-     *   - PA0 is then ignored while the move is running; holding the button
-     *     cannot restart or alter the distance measurement.
-     *   - A new PA0 press while moving acts as a manual stop.
-     *   - After automatic completion, the button must be released and pressed
-     *     again before another measurement can start.
+     *   - A debounced PA0 press starts a 3-second stationary countdown.
+     *   - The encoder is reset only when the move actually starts, so the
+     *     countdown cannot contaminate the 180 mm measurement.
+     *   - PA0 is ignored while the move runs; a new press while moving stops it.
+     *   - After completion, release and press PA0 again for another run.
      */
     if (button_pressed != button_last_raw) {
         button_last_raw = button_pressed;
@@ -85,12 +86,20 @@ void hardware_test_run(void)
         button_stable = button_last_raw;
 
         if (button_stable) {
-            if (motion_is_complete()) {
-                motion_move_cell();
-            } else {
+            if (motion_is_complete() && !start_pending) {
+                start_pending = true;
+                start_delay_ms = now;
+                motor_stop();
+            } else if (!motion_is_complete() && !start_pending) {
                 motion_stop();
             }
         }
+    }
+
+    if (start_pending && (now - start_delay_ms) >= 3000U) {
+        start_pending = false;
+        motion_move_cell();
+    }
     }
 
     /* OLED is deliberately refreshed slowly to keep I2C traffic low. */
