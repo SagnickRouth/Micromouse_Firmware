@@ -20,6 +20,7 @@
 #include "main.h"
 #include "hardware_test.h"
 #include "motor.h"
+#include "motion.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -120,6 +121,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /* Motion controller is idle until a motion command is issued. */
+    motion_update();
     hardware_test_run();
 
     /* USER CODE END WHILE */
