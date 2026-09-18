@@ -3,6 +3,7 @@
 #include "encoder.h"
 #include "motor.h"
 #include "speed_control.h"
+#include "motion.h"
 #include "oled.h"
 #include "stm32f4xx_hal.h"
 #include <stdio.h>
@@ -41,6 +42,7 @@ void hardware_test_init(void)
 
     oled_init();
     speed_control_init();
+    motion_init();
 }
 
 void hardware_test_run(void)
@@ -65,13 +67,18 @@ void hardware_test_run(void)
         (HAL_GPIO_ReadPin(KEY_PORT, KEY_PIN) == GPIO_PIN_RESET);
     const uint8_t dip = dip_read();
 
-    /* Closed-loop speed test: hold PA0 for 180 mm/s on both wheels. */
-    if (button_pressed) {
+    /*
+     * One-cell motion test:
+     *   - Press PA0: start one 180 mm move using speed PID feedback.
+     *   - Keep PA0 held while the move runs.
+     *   - Release PA0: immediately stop for safety.
+     */
+    if (button_pressed && !motor_test_active) {
         motor_test_active = true;
-        speed_control_update(SPEED_TEST_TARGET_MMPS, SPEED_TEST_TARGET_MMPS);
-    } else if (motor_test_active) {
+        motion_move_cell();
+    } else if (!button_pressed && motor_test_active) {
         motor_test_active = false;
-        speed_control_stop();
+        motion_stop();
     }
 
     /* OLED is deliberately refreshed slowly to keep I2C traffic low. */
