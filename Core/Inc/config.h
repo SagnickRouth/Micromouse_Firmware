@@ -44,6 +44,11 @@ typedef struct {
 #define MOTOR_PWM_MAX         999
 #define MOTOR_PWM_FREQ        21000
 
+/* Motor polarity. Set true if a positive command physically drives that
+ * wheel backwards with the current motor/gearbox wiring. */
+#define MOTOR_LEFT_INVERTED   false
+#define MOTOR_RIGHT_INVERTED  false
+
 /* ===================== N20 Encoders ===================== */
 /* Left encoder: TIM1, PA8/PA9. */
 #define ENC_LEFT_TIMER        TIM1
