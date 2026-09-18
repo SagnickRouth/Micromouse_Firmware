@@ -39,7 +39,6 @@ void hardware_test_init(void)
     HAL_Delay(100);
     HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
 
-    encoder_init();
     oled_init();
     speed_control_init();
 }
