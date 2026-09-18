@@ -47,7 +47,7 @@ typedef struct {
 /* Motor polarity. Set true if a positive command physically drives that
  * wheel backwards with the current motor/gearbox wiring. */
 #define MOTOR_LEFT_INVERTED   false
-#define MOTOR_RIGHT_INVERTED  false
+#define MOTOR_RIGHT_INVERTED  true
 
 /* ===================== N20 Encoders ===================== */
 /* Left encoder: TIM1, PA8/PA9. */
