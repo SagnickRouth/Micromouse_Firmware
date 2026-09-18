@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "hardware_test.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -101,12 +102,22 @@ int main(void)
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
+  /*
+   * Hardware verification mode.
+   *
+   * CubeMX owns all peripheral initialization above. The diagnostic layer
+   * only consumes the initialized GPIO, I2C1, TIM1 and TIM4 peripherals.
+   */
+  hardware_test_init();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    hardware_test_run();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
