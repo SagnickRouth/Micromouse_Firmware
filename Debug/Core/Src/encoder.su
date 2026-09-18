@@ -1,0 +1,8 @@
+../Core/Src/encoder.c:13:6:encoder_init	8	static
+../Core/Src/encoder.c:21:6:encoder_update	32	static
+../Core/Src/encoder.c:47:6:encoder_reset	4	static
+../Core/Src/encoder.c:60:9:encoder_get_left_count	4	static
+../Core/Src/encoder.c:65:9:encoder_get_right_count	4	static
+../Core/Src/encoder.c:70:7:encoder_get_left_speed	4	static
+../Core/Src/encoder.c:75:7:encoder_get_right_speed	4	static
+../Core/Src/encoder.c:80:7:encoder_ticks_to_mm	16	static

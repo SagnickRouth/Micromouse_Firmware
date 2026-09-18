@@ -1,0 +1,16 @@
+../Core/Src/algorithm.c:17:13:gpio_read_active_low	1
+../Core/Src/algorithm.c:36:17:algorithm_read_switches	7
+../Core/Src/algorithm.c:61:17:algorithm_cycle_next	1
+../Core/Src/algorithm.c:69:24:algorithm_get_config	1
+../Core/Src/algorithm.c:74:13:algorithm_get_name	2
+../Core/Src/algorithm.c:79:18:dir_left	1
+../Core/Src/algorithm.c:84:18:dir_right	1
+../Core/Src/algorithm.c:89:18:dir_back	1
+../Core/Src/algorithm.c:94:11:algorithm_next_direction	6
+../Core/Src/algorithm.c:113:11:alg_flood_fill_step	1
+../Core/Src/algorithm.c:124:11:alg_left_wall_step	4
+../Core/Src/algorithm.c:134:11:alg_right_wall_step	4
+../Core/Src/algorithm.c:146:16:count_walls	1
+../Core/Src/algorithm.c:154:13:dead_end_fill_pass	17
+../Core/Src/algorithm.c:182:11:alg_dead_end_fill_step	1
+../Core/Src/algorithm.c:195:11:alg_a_star_step	2

@@ -1,0 +1,4 @@
+../Core/Src/hardware_test.c:9:16:dip_read	3
+../Core/Src/hardware_test.c:22:20:dip_name	5
+../Core/Src/hardware_test.c:32:6:hardware_test_init	1
+../Core/Src/hardware_test.c:43:6:hardware_test_run	3

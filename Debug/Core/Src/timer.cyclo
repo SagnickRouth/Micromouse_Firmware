@@ -1,0 +1,5 @@
+../Core/Src/timer.c:20:13:timer_gpio_init	1
+../Core/Src/timer.c:52:6:MX_TIM1_Init	3
+../Core/Src/timer.c:89:6:MX_TIM3_Init	5
+../Core/Src/timer.c:124:6:MX_TIM4_Init	3
+../Core/Src/timer.c:161:6:timer_gpio_and_peripheral_init	1
