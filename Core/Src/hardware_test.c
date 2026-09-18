@@ -41,8 +41,6 @@ void hardware_test_init(void)
     HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
 
     oled_init();
-    speed_control_init();
-    motion_init();
 }
 
 void hardware_test_run(void)
@@ -50,7 +48,9 @@ void hardware_test_run(void)
     static uint32_t last_ui_ms = 0U;
     static uint32_t last_led_ms = 0U;
     static bool led_state = false;
-    static bool motor_test_active = false;
+    static bool button_stable = false;
+    static bool button_last_raw = false;
+    static uint32_t button_change_ms = 0U;
 
     const uint32_t now = HAL_GetTick();
 
@@ -69,16 +69,28 @@ void hardware_test_run(void)
 
     /*
      * One-cell motion test:
-     *   - Press PA0: start one 180 mm move using speed PID feedback.
-     *   - Keep PA0 held while the move runs.
-     *   - Release PA0: immediately stop for safety.
+     *   - A debounced PA0 press starts one 180 mm move.
+     *   - PA0 is then ignored while the move is running; holding the button
+     *     cannot restart or alter the distance measurement.
+     *   - A new PA0 press while moving acts as a manual stop.
+     *   - After automatic completion, the button must be released and pressed
+     *     again before another measurement can start.
      */
-    if (button_pressed && !motor_test_active) {
-        motor_test_active = true;
-        motion_move_cell();
-    } else if (!button_pressed && motor_test_active) {
-        motor_test_active = false;
-        motion_stop();
+    if (button_pressed != button_last_raw) {
+        button_last_raw = button_pressed;
+        button_change_ms = now;
+    }
+
+    if ((now - button_change_ms) >= 30U && button_stable != button_last_raw) {
+        button_stable = button_last_raw;
+
+        if (button_stable) {
+            if (motion_is_complete()) {
+                motion_move_cell();
+            } else {
+                motion_stop();
+            }
+        }
     }
 
     /* OLED is deliberately refreshed slowly to keep I2C traffic low. */
