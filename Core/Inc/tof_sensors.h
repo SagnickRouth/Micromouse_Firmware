@@ -9,6 +9,18 @@ typedef struct {
     uint16_t front_left;
     uint16_t front_right;
     uint16_t right;
+    uint8_t left_status;
+    uint8_t front_left_status;
+    uint8_t front_right_status;
+    uint8_t right_status;
+    uint8_t left_address;
+    uint8_t front_left_address;
+    uint8_t front_right_address;
+    uint8_t right_address;
+    uint8_t left_model;
+    uint8_t front_left_model;
+    uint8_t front_right_model;
+    uint8_t right_model;
     bool initialized;
 } ToFSensors;
 
