@@ -12,6 +12,7 @@ void oled_init(void);
 void oled_clear(void);
 void oled_show_algorithm(const char *name, bool running);
 void oled_show_message(const char *line1, const char *line2);
+void oled_show_tof(uint16_t left, uint16_t front_left, uint16_t front_right, uint16_t right);
 void oled_show_hardware_test(bool button_pressed, uint8_t dip,
                              const char *algorithm,
                              const char *left_count,
