@@ -276,7 +276,33 @@ uint16_t vl53l0x_read_range_mm(VL53L0X_Device *d)
        0 = valid, 2 = signal fail. A reported 8191 mm with status 2 is
        an invalid/no-target result, not a real 8.191 m measurement. */
     if (rd(d,REG_RESULT_RANGE_STATUS,&v)!=HAL_OK) return 0xFFFF;
-    d->last_status=(uint8_t)((v & 0x78U) >> 3);
+
+    /*
+     * The bits in RESULT_RANGE_STATUS contain the device-internal status,
+     * not the PAL/API RangeStatus shown by the ST VL53L0X API.
+     *
+     * In particular, internal status 11 means GOOD RANGING. The ST PAL
+     * layer maps that condition to RangeStatus 0 (Range Valid). Reporting
+     * the raw value as the public status made valid measurements appear
+     * as "S11" on the OLED.
+     */
+    uint8_t device_status = (uint8_t)((v & 0x78U) >> 3);
+    if (device_status == 0U || device_status == 5U ||
+        device_status == 7U || device_status >= 12U) {
+        d->last_status = 255U;              /* NONE / no valid update */
+    } else if (device_status == 1U || device_status == 2U ||
+               device_status == 3U) {
+        d->last_status = 5U;                /* Hardware fail */
+    } else if (device_status == 6U || device_status == 9U) {
+        d->last_status = 4U;                /* Phase fail */
+    } else if (device_status == 8U || device_status == 10U) {
+        d->last_status = 3U;                /* Min range fail */
+    } else if (device_status == 4U) {
+        d->last_status = 2U;                /* Signal fail */
+    } else {
+        /* Includes device status 11: valid ranging. */
+        d->last_status = 0U;
+    }
 
     if (rd16(d,(uint8_t)(REG_RESULT_RANGE_STATUS+10),&range)!=HAL_OK) return 0xFFFF;
     (void)wr(d,REG_SYSTEM_INTERRUPT_CLEAR,0x01);
