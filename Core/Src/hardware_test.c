@@ -121,7 +121,7 @@ void hardware_test_run(void)
 
     if (show_tof) {
         const ToFSensors *tof = tof_sensors_get();
-        oled_show_tof(tof->left, tof->front_left, tof->front_right, tof->right);
+        oled_show_tof_debug(tof);
         return;
     }
 
