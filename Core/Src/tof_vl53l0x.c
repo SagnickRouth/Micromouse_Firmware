@@ -143,9 +143,12 @@ bool vl53l0x_init(VL53L0X_Device *d, I2C_HandleTypeDef *i2c, uint8_t address)
     d->i2c=i2c;
     d->address=address;
     d->timeout_ms=100;
+    d->last_status=255U;
+    d->model_id=0U;
 
     if (rd(d, REG_IDENTIFICATION_MODEL_ID, &model) != HAL_OK || model != 0xEE)
         return false;
+    d->model_id=model;
 
     if (rd(d,REG_VHV_CONFIG_PAD_SCL_SDA__EXTSUP_HV,&v)!=HAL_OK ||
         wr(d,REG_VHV_CONFIG_PAD_SCL_SDA__EXTSUP_HV,(uint8_t)(v|1))!=HAL_OK) return false;
@@ -253,5 +256,5 @@ uint16_t vl53l0x_read_range_mm(VL53L0X_Device *d)
 
 bool vl53l0x_timeout_occurred(VL53L0X_Device *d)
 {
-    return d && d->initialized;
+    return d && d->initialized && d->last_status == 255U;
 }
