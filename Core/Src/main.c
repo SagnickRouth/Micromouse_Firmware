@@ -24,6 +24,7 @@
 #include "encoder.h"
 #include "speed_control.h"
 #include "tof_sensors.h"
+#include "oled.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
