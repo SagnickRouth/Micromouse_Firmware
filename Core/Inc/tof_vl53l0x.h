@@ -10,6 +10,8 @@ typedef struct {
     uint8_t address;
     uint8_t stop_variable;
     uint16_t timeout_ms;
+    uint8_t last_status;
+    uint8_t model_id;
     bool initialized;
 } VL53L0X_Device;
 
