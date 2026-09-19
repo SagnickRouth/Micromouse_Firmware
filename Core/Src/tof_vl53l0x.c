@@ -239,6 +239,13 @@ uint16_t vl53l0x_read_range_mm(VL53L0X_Device *d)
     } while (v&1U);
 
     if (!wait_for_interrupt(d,d->timeout_ms)) return 0xFFFF;
+
+    /* RESULT_RANGE_STATUS (0x14), bits 6:3, contains the ST range status.
+       0 = valid, 2 = signal fail. A reported 8191 mm with status 2 is
+       an invalid/no-target result, not a real 8.191 m measurement. */
+    if (rd(d,REG_RESULT_RANGE_STATUS,&v)!=HAL_OK) return 0xFFFF;
+    d->last_status=(uint8_t)((v & 0x78U) >> 3);
+
     if (rd16(d,(uint8_t)(REG_RESULT_RANGE_STATUS+10),&range)!=HAL_OK) return 0xFFFF;
     (void)wr(d,REG_SYSTEM_INTERRUPT_CLEAR,0x01);
     return range;
