@@ -181,3 +181,47 @@ void oled_show_tof(uint16_t left, uint16_t front_left, uint16_t front_right, uin
     text("TOF READY", 50, 40, 1);
     refresh();
 }
+
+void oled_show_tof_debug(const ToFSensors *tof)
+{
+    memset(fb, 0, sizeof(fb));
+    char line[32];
+
+    if (tof == NULL) {
+        text("TOF NULL", 2, 8, 2);
+        refresh();
+        return;
+    }
+
+    /* Compact diagnostic view:
+       value + RangeStatus + assigned 7-bit I2C address.
+       Status 0 = valid, 2 = signal fail, 255 = no update/timeout. */
+    snprintf(line, sizeof(line), "LF%u S%u A%u",
+             (unsigned)tof->left, (unsigned)tof->left_status,
+             (unsigned)tof->left_address);
+    text(line, 0, 0, 1);
+
+    snprintf(line, sizeof(line), "LD%u S%u A%u",
+             (unsigned)tof->front_left, (unsigned)tof->front_left_status,
+             (unsigned)tof->front_left_address);
+    text(line, 0, 14, 1);
+
+    snprintf(line, sizeof(line), "RD%u S%u A%u",
+             (unsigned)tof->front_right, (unsigned)tof->front_right_status,
+             (unsigned)tof->front_right_address);
+    text(line, 0, 28, 1);
+
+    snprintf(line, sizeof(line), "RF%u S%u A%u",
+             (unsigned)tof->right, (unsigned)tof->right_status,
+             (unsigned)tof->right_address);
+    text(line, 0, 42, 1);
+
+    snprintf(line, sizeof(line), "ID%u %u %u %u",
+             (unsigned)tof->left_model,
+             (unsigned)tof->front_left_model,
+             (unsigned)tof->front_right_model,
+             (unsigned)tof->right_model);
+    text(line, 0, 56, 1);
+
+    refresh();
+}
