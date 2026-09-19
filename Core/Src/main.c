@@ -23,6 +23,7 @@
 #include "motion.h"
 #include "encoder.h"
 #include "speed_control.h"
+#include "tof_sensors.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -119,6 +120,10 @@ int main(void)
   speed_control_init();
   motion_init();
   hardware_test_init();
+  if (!tof_sensors_init()) {
+    oled_show_message("TOF ERROR", "CHECK WIRING");
+    HAL_Delay(1000);
+  }
 
   /* USER CODE END 2 */
 
@@ -128,6 +133,7 @@ int main(void)
   {
     /* Update encoder state exactly once per main-loop iteration. */
     encoder_update();
+    tof_sensors_update();
 
     /* Motion controller is idle until a motion command is issued. */
     motion_update();
@@ -404,7 +410,18 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, MOTOR_STBY_Pin|MOTOR_AIN1_Pin|MOTOR_AIN2_Pin|MOTOR_BIN1_Pin
-                          |MOTOR_BIN2_Pin, GPIO_PIN_RESET);
+                          |MOTOR_BIN2_Pin|VL53_LFWD_XSHUT_Pin|VL53_LDIAG_XSHUT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, VL53_RDIAG_XSHUT_Pin|VL53_RFWD_XSHUT_Pin, GPIO_PIN_RESET);
+
+  /*Configure VL53L0X XSHUT pins low before sensor initialization */
+  GPIO_InitStruct.Pin = VL53_LFWD_XSHUT_Pin|VL53_LDIAG_XSHUT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = VL53_RDIAG_XSHUT_Pin|VL53_RFWD_XSHUT_Pin;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
