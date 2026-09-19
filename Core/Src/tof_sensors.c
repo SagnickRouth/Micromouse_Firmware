@@ -1,6 +1,7 @@
 #include "tof_sensors.h"
 #include "config.h"
 #include "main.h"
+#include "motion.h"
 
 extern I2C_HandleTypeDef hi2c1;
 
@@ -40,7 +41,12 @@ bool tof_sensors_init(void)
 
 void tof_sensors_update(void)
 {
-    if (!data.initialized) return;
+    static uint32_t last_ms = 0U;
+    if (!data.initialized || !motion_is_complete()) return;
+    uint32_t now = HAL_GetTick();
+    if ((now - last_ms) < 300U) return;
+    last_ms = now;
+
     data.left=vl53l0x_read_range_mm(&s[0]);
     data.front_left=vl53l0x_read_range_mm(&s[1]);
     data.front_right=vl53l0x_read_range_mm(&s[2]);
