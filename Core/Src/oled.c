@@ -168,3 +168,16 @@ void oled_show_message(const char *line1, const char *line2)
     text(line2, 10, 40, 2);
     refresh();
 }
+
+void oled_show_tof(uint16_t left, uint16_t front_left, uint16_t front_right, uint16_t right)
+{
+    memset(fb, 0, sizeof(fb));
+    char line[24];
+    snprintf(line, sizeof(line), "LF:%u LD:%u", (unsigned)left, (unsigned)front_left);
+    text(line, 2, 8, 1);
+    snprintf(line, sizeof(line), "RD:%u RF:%u", (unsigned)front_right, (unsigned)right);
+    text(line, 2, 24, 1);
+    text("MM", 2, 40, 1);
+    text("TOF READY", 50, 40, 1);
+    refresh();
+}
