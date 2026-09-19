@@ -84,12 +84,39 @@ static bool wait_for_interrupt(VL53L0X_Device *d, uint32_t timeout)
     return false;
 }
 
-static bool ref_calibration(VL53L0X_Device *d, uint8_t init_byte)
+static bool ref_calibration(VL53L0X_Device *d, uint8_t sequence_config,
+                                  uint8_t init_byte)
 {
-    if (wr(d, REG_SYSRANGE_START, (uint8_t)(0x01U | init_byte)) != HAL_OK) return false;
-    if (!wait_for_interrupt(d, d->timeout_ms)) return false;
-    (void)wr(d, REG_SYSTEM_INTERRUPT_CLEAR, 0x01);
-    (void)wr(d, REG_SYSRANGE_START, 0x00);
+    /*
+     * VL53L0X reference calibration is two distinct single-reference
+     * calibrations:
+     *   sequence 0x01 + 0x40 = VHV calibration
+     *   sequence 0x02 + 0x00 = phase calibration
+     *
+     * The previous implementation ran both calibrations while the normal
+     * 0xE8 sequence was selected. That is not the ST/Pololu reference
+     * sequence and can leave every sensor reporting RangeStatus 4
+     * (phase fail) even though I2C addressing and model ID are correct.
+     */
+    if (wr(d, REG_SYSTEM_SEQUENCE_CONFIG, sequence_config) != HAL_OK)
+        return false;
+
+    if (wr(d, REG_SYSRANGE_START, (uint8_t)(0x01U | init_byte)) != HAL_OK)
+        return false;
+
+    if (!wait_for_interrupt(d, d->timeout_ms)) {
+        (void)wr(d, REG_SYSRANGE_START, 0x00);
+        return false;
+    }
+
+    if (wr(d, REG_SYSTEM_INTERRUPT_CLEAR, 0x01) != HAL_OK) {
+        (void)wr(d, REG_SYSRANGE_START, 0x00);
+        return false;
+    }
+
+    if (wr(d, REG_SYSRANGE_START, 0x00) != HAL_OK)
+        return false;
+
     return true;
 }
 
@@ -206,8 +233,10 @@ bool vl53l0x_init(VL53L0X_Device *d, I2C_HandleTypeDef *i2c, uint8_t address)
         wr(d,REG_SYSTEM_INTERRUPT_CLEAR,0x01)!=HAL_OK ||
         wr(d,REG_SYSTEM_SEQUENCE_CONFIG,0xE8)!=HAL_OK) return false;
 
-    if (!ref_calibration(d,0x40)) return false;
-    if (!ref_calibration(d,0x00)) return false;
+    /* Perform VHV calibration, then phase calibration, using the
+       dedicated ST sequence-step configurations. */
+    if (!ref_calibration(d,0x01,0x40)) return false;
+    if (!ref_calibration(d,0x02,0x00)) return false;
     if (wr(d,REG_SYSTEM_SEQUENCE_CONFIG,0xE8)!=HAL_OK) return false;
 
     d->initialized=true;
