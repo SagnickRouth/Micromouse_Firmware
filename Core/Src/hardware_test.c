@@ -5,6 +5,7 @@
 #include "speed_control.h"
 #include "motion.h"
 #include "oled.h"
+#include "tof_sensors.h"
 #include "stm32f4xx_hal.h"
 #include <stdio.h>
 #include <string.h>
@@ -111,6 +112,18 @@ void hardware_test_run(void)
         return;
 
     last_ui_ms = now;
+    static bool show_tof = false;
+    static uint32_t last_page_ms = 0U;
+    if ((now - last_page_ms) >= 1000U) {
+        last_page_ms = now;
+        show_tof = !show_tof;
+    }
+
+    if (show_tof) {
+        const ToFSensors *tof = tof_sensors_get();
+        oled_show_tof(tof->left, tof->front_left, tof->front_right, tof->right);
+        return;
+    }
 
     char l[24];
     char r[24];
