@@ -17,8 +17,12 @@ static WallState state = {0};
  */
 #define FRONT_WALL_DETECT_MM 115U
 #define FRONT_WALL_CLEAR_MM  135U
-#define SIDE_WALL_DETECT_MM  145U
-#define SIDE_WALL_CLEAR_MM   165U
+/* These thresholds are centerline-to-wall distances after diagonal projection.
+ * They preserve approximately the previous 145/165 mm diagonal-beam thresholds:
+ * 5 + 145*cos(45) ~= 108 mm and 5 + 165*cos(45) ~= 122 mm.
+ */
+#define SIDE_WALL_DETECT_MM  108U
+#define SIDE_WALL_CLEAR_MM   122U
 
 /*
  * An invalid/no-target result means we do not have a usable wall distance.
@@ -81,13 +85,13 @@ void wall_detection_update(void)
     state.left_valid = ld_valid;
     state.right_valid = rd_valid;
 
-    /* LD is the diagonal forward-left wall sensor. */
-    state.left = update_hysteresis(state.left, ld_valid, tof->front_left,
+    /* LD is diagonal; use the projected centerline-to-wall distance. */
+    state.left = update_hysteresis(state.left, ld_valid, tof->left_wall_distance,
                                    SIDE_WALL_DETECT_MM, SIDE_WALL_CLEAR_MM,
                                    &left_invalid_count);
 
-    /* RD is the diagonal forward-right wall sensor. */
-    state.right = update_hysteresis(state.right, rd_valid, tof->front_right,
+    /* RD is diagonal; use the projected centerline-to-wall distance. */
+    state.right = update_hysteresis(state.right, rd_valid, tof->right_wall_distance,
                                     SIDE_WALL_DETECT_MM, SIDE_WALL_CLEAR_MM,
                                     &right_invalid_count);
 
