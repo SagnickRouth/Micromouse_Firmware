@@ -256,7 +256,14 @@ uint16_t vl53l0x_read_range_mm(VL53L0X_Device *d)
 {
     uint8_t v;
     uint16_t range;
+
+    /*
+     * Any transport/timeout failure is an invalid measurement. Clear the
+     * status here so wall detection cannot reuse the previous valid status
+     * with a new but unusable distance value.
+     */
     if (!d || !d->initialized) return 0xFFFF;
+    d->last_status = 255U;
 
     if (wr(d,0x80,0x01)!=HAL_OK || wr(d,0xFF,0x01)!=HAL_OK ||
         wr(d,0x00,0x00)!=HAL_OK || wr(d,0x91,d->stop_variable)!=HAL_OK ||
