@@ -203,10 +203,9 @@ void oled_show_wall_debug(const ToFSensors *tof, const WallState *walls)
              (unsigned)tof->left, (unsigned)tof->right);
     text(line, 0, 14, 1);
 
-    /* LD/RD are diagonal sensors. Show the projected centerline-to-wall
-       distances on the wall-debug page, not their diagonal beam lengths. */
+    /* Show the four sensor distances directly for calibration/debugging. */
     snprintf(line, sizeof(line), "LD%u RD%u",
-             (unsigned)tof->left_wall_distance, (unsigned)tof->right_wall_distance);
+             (unsigned)tof->front_left, (unsigned)tof->front_right);
     text(line, 0, 28, 1);
 
     snprintf(line, sizeof(line), "ERR %+d",
@@ -241,13 +240,13 @@ void oled_show_tof_debug(const ToFSensors *tof)
              (unsigned)tof->left_address);
     text(line, 0, 0, 1);
 
-    snprintf(line, sizeof(line), "LDW%u S%u A%u",
-             (unsigned)tof->left_wall_distance, (unsigned)tof->front_left_status,
+    snprintf(line, sizeof(line), "LD%u S%u A%u",
+             (unsigned)tof->front_left, (unsigned)tof->front_left_status,
              (unsigned)tof->front_left_address);
     text(line, 0, 14, 1);
 
-    snprintf(line, sizeof(line), "RDW%u S%u A%u",
-             (unsigned)tof->right_wall_distance, (unsigned)tof->front_right_status,
+    snprintf(line, sizeof(line), "RD%u S%u A%u",
+             (unsigned)tof->front_right, (unsigned)tof->front_right_status,
              (unsigned)tof->front_right_address);
     text(line, 0, 28, 1);
 
