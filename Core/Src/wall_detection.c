@@ -20,11 +20,30 @@ static WallState state = {0};
 #define SIDE_WALL_DETECT_MM  145U
 #define SIDE_WALL_CLEAR_MM   165U
 
+/*
+ * An invalid/no-target result means we do not have a usable wall distance.
+ * Do not keep an old WALL state forever just because the sensor temporarily
+ * reports a non-valid range. Require two consecutive invalid samples before
+ * declaring that wall OPEN, which avoids a single bad sample causing a
+ * false opening.
+ */
+#define INVALID_SAMPLES_TO_CLEAR 2U
+
 static bool update_hysteresis(bool previous, bool valid, uint16_t distance,
-                              uint16_t detect_mm, uint16_t clear_mm)
+                              uint16_t detect_mm, uint16_t clear_mm,
+                              uint8_t *invalid_count)
 {
-    if (!valid)
+    if (!valid) {
+        if (*invalid_count < INVALID_SAMPLES_TO_CLEAR)
+            (*invalid_count)++;
+
+        if (*invalid_count >= INVALID_SAMPLES_TO_CLEAR)
+            return false;
+
         return previous;
+    }
+
+    *invalid_count = 0U;
 
     if (previous)
         return distance < clear_mm;
@@ -47,6 +66,10 @@ void wall_detection_update(void)
 {
     const ToFSensors *tof = tof_sensors_get();
 
+    static uint8_t left_invalid_count = 0U;
+    static uint8_t right_invalid_count = 0U;
+    static uint8_t front_invalid_count = 0U;
+
     if (tof == NULL || !tof->initialized)
         return;
 
@@ -60,11 +83,13 @@ void wall_detection_update(void)
 
     /* LD is the diagonal forward-left wall sensor. */
     state.left = update_hysteresis(state.left, ld_valid, tof->front_left,
-                                   SIDE_WALL_DETECT_MM, SIDE_WALL_CLEAR_MM);
+                                   SIDE_WALL_DETECT_MM, SIDE_WALL_CLEAR_MM,
+                                   &left_invalid_count);
 
     /* RD is the diagonal forward-right wall sensor. */
     state.right = update_hysteresis(state.right, rd_valid, tof->front_right,
-                                    SIDE_WALL_DETECT_MM, SIDE_WALL_CLEAR_MM);
+                                    SIDE_WALL_DETECT_MM, SIDE_WALL_CLEAR_MM,
+                                    &right_invalid_count);
 
     /*
      * LF and RF both point straight forward.
@@ -72,11 +97,16 @@ void wall_detection_update(void)
      * With both readings valid, require both sensors to see the close wall.
      * If one temporarily becomes invalid, use the remaining valid forward
      * sensor so a single bad sample does not hide a real wall.
+     *
+     * If neither forward sensor is valid for two consecutive updates,
+     * explicitly clear the old FRONT=WALL state.
      */
     const bool front_any_valid = lf_valid || rf_valid;
     state.front_valid = front_any_valid;
 
     if (front_any_valid) {
+        front_invalid_count = 0U;
+
         bool front_detect;
         bool front_clear;
 
@@ -96,6 +126,12 @@ void wall_detection_update(void)
         if (!state.front && front_detect)
             state.front = true;
         else if (state.front && front_clear)
+            state.front = false;
+    } else {
+        if (front_invalid_count < INVALID_SAMPLES_TO_CLEAR)
+            front_invalid_count++;
+
+        if (front_invalid_count >= INVALID_SAMPLES_TO_CLEAR)
             state.front = false;
     }
 
