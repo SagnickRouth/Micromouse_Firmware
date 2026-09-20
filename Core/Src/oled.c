@@ -182,6 +182,44 @@ void oled_show_tof(uint16_t left, uint16_t front_left, uint16_t front_right, uin
     refresh();
 }
 
+void oled_show_wall_debug(const ToFSensors *tof, const WallState *walls)
+{
+    memset(fb, 0, sizeof(fb));
+    char line[32];
+
+    if (tof == NULL || walls == NULL) {
+        text("WALL NULL", 2, 20, 2);
+        refresh();
+        return;
+    }
+
+    snprintf(line, sizeof(line), "L:%s F:%s R:%s",
+             walls->left ? "WALL" : "OPEN",
+             walls->front ? "WALL" : "OPEN",
+             walls->right ? "WALL" : "OPEN");
+    text(line, 0, 0, 1);
+
+    snprintf(line, sizeof(line), "LF%u RF%u",
+             (unsigned)tof->left, (unsigned)tof->right);
+    text(line, 0, 14, 1);
+
+    snprintf(line, sizeof(line), "LD%u RD%u",
+             (unsigned)tof->front_left, (unsigned)tof->front_right);
+    text(line, 0, 28, 1);
+
+    snprintf(line, sizeof(line), "ERR %+d",
+             (int)walls->front_error_mm);
+    text(line, 0, 42, 1);
+
+    snprintf(line, sizeof(line), "V %u%u%u",
+             (unsigned)walls->left_valid,
+             (unsigned)walls->front_valid,
+             (unsigned)walls->right_valid);
+    text(line, 0, 56, 1);
+
+    refresh();
+}
+
 void oled_show_tof_debug(const ToFSensors *tof)
 {
     memset(fb, 0, sizeof(fb));
