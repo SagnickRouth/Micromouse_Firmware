@@ -24,6 +24,7 @@
 #include "encoder.h"
 #include "speed_control.h"
 #include "tof_sensors.h"
+#include "wall_detection.h"
 #include "oled.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -120,6 +121,7 @@ int main(void)
   encoder_init();
   speed_control_init();
   motion_init();
+  wall_detection_init();
   hardware_test_init();
   if (!tof_sensors_init()) {
     oled_show_message("TOF ERROR", "CHECK WIRING");
@@ -135,6 +137,7 @@ int main(void)
     /* Update encoder state exactly once per main-loop iteration. */
     encoder_update();
     tof_sensors_update();
+    wall_detection_update();
 
     /* Motion controller is idle until a motion command is issued. */
     motion_update();
