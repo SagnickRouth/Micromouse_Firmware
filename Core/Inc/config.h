@@ -96,6 +96,19 @@ typedef struct { uint8_t x, y; Direction facing; float yaw; float target_yaw; } 
 #define VL53_ADDR_RIGHT 0x33
 #define VL53_DEFAULT_ADDR 0x29
 
+/*
+ * Diagonal side-wall geometry:
+ *   LD/RD are mounted approximately 45 degrees from the robot's forward axis.
+ *   Their sensing origin is approximately 5 mm outboard of the robot centerline.
+ *
+ * For a wall parallel to the robot's longitudinal axis, the perpendicular
+ * component of the diagonal beam is beam * cos(45 deg). The centerline-to-wall
+ * distance is therefore 5 mm + that perpendicular component.
+ */
+#define VL53_SIDE_SENSOR_ANGLE_DEG       45.0f
+#define VL53_SIDE_SENSOR_COS_ANGLE       0.70710678f
+#define VL53_SIDE_SENSOR_LATERAL_OFFSET_MM 5.0f
+
 typedef enum {
     SENSOR_LEFT = 0,
     SENSOR_FRONT_LEFT = 1,
