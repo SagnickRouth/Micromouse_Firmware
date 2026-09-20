@@ -6,6 +6,7 @@
 #include "motion.h"
 #include "oled.h"
 #include "tof_sensors.h"
+#include "wall_detection.h"
 #include "stm32f4xx_hal.h"
 #include <stdio.h>
 #include <string.h>
@@ -112,16 +113,23 @@ void hardware_test_run(void)
         return;
 
     last_ui_ms = now;
-    static bool show_tof = false;
+    static uint8_t page = 0U;
     static uint32_t last_page_ms = 0U;
     if ((now - last_page_ms) >= 1000U) {
         last_page_ms = now;
-        show_tof = !show_tof;
+        page = (uint8_t)((page + 1U) % 3U);
     }
 
-    if (show_tof) {
+    if (page == 1U) {
         const ToFSensors *tof = tof_sensors_get();
         oled_show_tof_debug(tof);
+        return;
+    }
+
+    if (page == 2U) {
+        const ToFSensors *tof = tof_sensors_get();
+        const WallState *walls = wall_detection_get();
+        oled_show_wall_debug(tof, walls);
         return;
     }
 
