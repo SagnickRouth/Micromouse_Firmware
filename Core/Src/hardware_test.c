@@ -108,40 +108,17 @@ void hardware_test_run(void)
         next_test_is_turn = !next_test_is_turn;
     }
 
-    /* OLED is deliberately refreshed slowly to keep I2C traffic low. */
+    /* OLED shows only the four calibrated ToF sensor distances. */
     if ((now - last_ui_ms) < 100U)
         return;
 
     last_ui_ms = now;
-    static uint8_t page = 0U;
-    static uint32_t last_page_ms = 0U;
-    if ((now - last_page_ms) >= 1000U) {
-        last_page_ms = now;
-        page = (uint8_t)((page + 1U) % 3U);
+
+    const ToFSensors *tof = tof_sensors_get();
+    if (tof != NULL) {
+        oled_show_tof(tof->left,
+                      tof->front_left,
+                      tof->front_right,
+                      tof->right);
     }
-
-    if (page == 1U) {
-        const ToFSensors *tof = tof_sensors_get();
-        oled_show_tof_debug(tof);
-        return;
-    }
-
-    if (page == 2U) {
-        const ToFSensors *tof = tof_sensors_get();
-        const WallState *walls = wall_detection_get();
-        oled_show_wall_debug(tof, walls);
-        return;
-    }
-
-    char l[24];
-    char r[24];
-    char ls[24];
-    char rs[24];
-
-    snprintf(l, sizeof(l), "L:%ld", (long)encoder_get_left_count());
-    snprintf(r, sizeof(r), "R:%ld", (long)encoder_get_right_count());
-    snprintf(ls, sizeof(ls), "LS:%ld", (long)encoder_get_left_speed());
-    snprintf(rs, sizeof(rs), "RS:%ld", (long)encoder_get_right_speed());
-
-    oled_show_hardware_test(button_pressed, dip, dip_name(dip), l, r, ls, rs);
 }
