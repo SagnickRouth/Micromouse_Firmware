@@ -15,6 +15,14 @@ typedef struct {
     uint16_t front_right;
     uint16_t right;
 
+    /*
+     * Estimated perpendicular distance from the robot centerline to the
+     * corresponding side wall, derived from the calibrated diagonal beam.
+     * 0xFFFF means the corresponding diagonal measurement is invalid.
+     */
+    uint16_t left_wall_distance;
+    uint16_t right_wall_distance;
+
     /* Unmodified VL53L0X range values, useful for diagnostics. */
     uint16_t left_raw;
     uint16_t front_left_raw;
