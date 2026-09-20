@@ -8,6 +8,46 @@ extern I2C_HandleTypeDef hi2c1;
 static VL53L0X_Device s[4];
 static ToFSensors data = {0};
 
+/*
+ * Per-sensor linear calibration derived from the user's measured data:
+ *
+ *   true_mm = (raw_mm - offset_mm) / gain
+ *
+ * Reference points used:
+ *   true: 50, 75, 100, 150, 200, 300 mm
+ *
+ * This compensates both the sensor-specific offset and the small scale error.
+ * It is intentionally applied to the beam distance only. The diagonal
+ * LD/RD readings still need geometric projection using their actual mounting
+ * angle before they represent perpendicular distance to a side wall.
+ */
+#define TOF_LF_GAIN      1.033898305f
+#define TOF_LF_OFFSET_MM 6.389830508f
+
+#define TOF_LD_GAIN      1.029636804f
+#define TOF_LD_OFFSET_MM 13.677966102f
+
+#define TOF_RD_GAIN      1.066537530f
+#define TOF_RD_OFFSET_MM 7.796610169f
+
+#define TOF_RF_GAIN      1.030702179f
+#define TOF_RF_OFFSET_MM (-4.644067797f)
+
+static uint16_t calibrate_distance(uint16_t raw, float gain, float offset)
+{
+    if (raw == 0xFFFFU)
+        return raw;
+
+    float corrected = ((float)raw - offset) / gain;
+
+    if (corrected < 0.0f)
+        corrected = 0.0f;
+    if (corrected > 8191.0f)
+        corrected = 8191.0f;
+
+    return (uint16_t)(corrected + 0.5f);
+}
+
 static GPIO_TypeDef *ports[4] = {
     VL53_LEFT_XSHUT_PORT, VL53_FL_XSHUT_PORT,
     VL53_FR_XSHUT_PORT, VL53_RIGHT_XSHUT_PORT
@@ -68,15 +108,40 @@ void tof_sensors_update(void)
     if ((now - last_ms) < 300U) return;
     last_ms = now;
 
-    data.left=vl53l0x_read_range_mm(&s[0]);
-    data.front_left=vl53l0x_read_range_mm(&s[1]);
-    data.front_right=vl53l0x_read_range_mm(&s[2]);
-    data.right=vl53l0x_read_range_mm(&s[3]);
+    data.left_raw=vl53l0x_read_range_mm(&s[0]);
+    data.front_left_raw=vl53l0x_read_range_mm(&s[1]);
+    data.front_right_raw=vl53l0x_read_range_mm(&s[2]);
+    data.right_raw=vl53l0x_read_range_mm(&s[3]);
 
     data.left_status=s[0].last_status;
     data.front_left_status=s[1].last_status;
     data.front_right_status=s[2].last_status;
     data.right_status=s[3].last_status;
+
+    /*
+     * Only calibrated valid measurements are exposed to wall detection.
+     * Invalid values remain invalid and are never turned into a plausible
+     * distance by the calibration formula.
+     */
+    if (data.left_status == 0U)
+        data.left = calibrate_distance(data.left_raw, TOF_LF_GAIN, TOF_LF_OFFSET_MM);
+    else
+        data.left = 0xFFFFU;
+
+    if (data.front_left_status == 0U)
+        data.front_left = calibrate_distance(data.front_left_raw, TOF_LD_GAIN, TOF_LD_OFFSET_MM);
+    else
+        data.front_left = 0xFFFFU;
+
+    if (data.front_right_status == 0U)
+        data.front_right = calibrate_distance(data.front_right_raw, TOF_RD_GAIN, TOF_RD_OFFSET_MM);
+    else
+        data.front_right = 0xFFFFU;
+
+    if (data.right_status == 0U)
+        data.right = calibrate_distance(data.right_raw, TOF_RF_GAIN, TOF_RF_OFFSET_MM);
+    else
+        data.right = 0xFFFFU;
 }
 
 const ToFSensors *tof_sensors_get(void) { return &data; }
