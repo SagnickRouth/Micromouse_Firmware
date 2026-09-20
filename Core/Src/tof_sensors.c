@@ -142,6 +142,37 @@ void tof_sensors_update(void)
         data.right = calibrate_distance(data.right_raw, TOF_RF_GAIN, TOF_RF_OFFSET_MM);
     else
         data.right = 0xFFFFU;
+
+    /*
+     * Project the diagonal LD/RD beam onto the side-wall normal.
+     *
+     * The sensors are approximately 45 degrees from the forward axis, so
+     * only cos(45 deg) of the calibrated beam is perpendicular to a side
+     * wall. The sensor origins are approximately 5 mm outboard of the robot
+     * centerline, so that lateral offset is added to obtain the distance
+     * from the robot centerline to the wall.
+     *
+     * This is valid for a straight wall parallel to the robot's travel axis.
+     * The longitudinal position of the diagonal sensor does not affect the
+     * perpendicular distance to such a wall.
+     */
+    if (data.front_left_status == 0U) {
+        float distance = VL53_SIDE_SENSOR_LATERAL_OFFSET_MM +
+                         ((float)data.front_left * VL53_SIDE_SENSOR_COS_ANGLE);
+        if (distance > 8191.0f) distance = 8191.0f;
+        data.left_wall_distance = (uint16_t)(distance + 0.5f);
+    } else {
+        data.left_wall_distance = 0xFFFFU;
+    }
+
+    if (data.front_right_status == 0U) {
+        float distance = VL53_SIDE_SENSOR_LATERAL_OFFSET_MM +
+                         ((float)data.front_right * VL53_SIDE_SENSOR_COS_ANGLE);
+        if (distance > 8191.0f) distance = 8191.0f;
+        data.right_wall_distance = (uint16_t)(distance + 0.5f);
+    } else {
+        data.right_wall_distance = 0xFFFFU;
+    }
 }
 
 const ToFSensors *tof_sensors_get(void) { return &data; }
