@@ -241,13 +241,13 @@ void oled_show_tof_debug(const ToFSensors *tof)
              (unsigned)tof->left_address);
     text(line, 0, 0, 1);
 
-    snprintf(line, sizeof(line), "LD%u S%u A%u",
-             (unsigned)tof->front_left, (unsigned)tof->front_left_status,
+    snprintf(line, sizeof(line), "LDW%u S%u A%u",
+             (unsigned)tof->left_wall_distance, (unsigned)tof->front_left_status,
              (unsigned)tof->front_left_address);
     text(line, 0, 14, 1);
 
-    snprintf(line, sizeof(line), "RD%u S%u A%u",
-             (unsigned)tof->front_right, (unsigned)tof->front_right_status,
+    snprintf(line, sizeof(line), "RDW%u S%u A%u",
+             (unsigned)tof->right_wall_distance, (unsigned)tof->front_right_status,
              (unsigned)tof->front_right_address);
     text(line, 0, 28, 1);
 
