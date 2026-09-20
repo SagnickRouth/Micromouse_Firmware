@@ -311,7 +311,10 @@ uint16_t vl53l0x_read_range_mm(VL53L0X_Device *d)
         d->last_status = 0U;
     }
 
-    if (rd16(d,(uint8_t)(REG_RESULT_RANGE_STATUS+10),&range)!=HAL_OK) return 0xFFFF;
+    if (rd16(d,(uint8_t)(REG_RESULT_RANGE_STATUS+10),&range)!=HAL_OK) {
+        d->last_status = 255U;
+        return 0xFFFF;
+    }
     (void)wr(d,REG_SYSTEM_INTERRUPT_CLEAR,0x01);
     return range;
 }
