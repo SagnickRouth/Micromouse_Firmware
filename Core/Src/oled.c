@@ -177,10 +177,16 @@ void oled_show_tof(uint16_t left, uint16_t front_left, uint16_t front_right, uin
     snprintf(line, sizeof(line), "LF:%u", (unsigned)left);
     text(line, 2, 2, 2);
 
-    snprintf(line, sizeof(line), "LD:%u", (unsigned)front_left);
+    /* LD/RD are diagonal sensors, so display the calibrated
+       perpendicular centerline-to-wall distance instead of beam length. */
+    const ToFSensors *tof = tof_sensors_get();
+    const uint16_t ld_display = (tof != NULL) ? tof->left_wall_distance : front_left;
+    const uint16_t rd_display = (tof != NULL) ? tof->right_wall_distance : front_right;
+
+    snprintf(line, sizeof(line), "LD:%u", (unsigned)ld_display);
     text(line, 2, 18, 2);
 
-    snprintf(line, sizeof(line), "RD:%u", (unsigned)front_right);
+    snprintf(line, sizeof(line), "RD:%u", (unsigned)rd_display);
     text(line, 2, 34, 2);
 
     snprintf(line, sizeof(line), "RF:%u", (unsigned)right);
