@@ -33,6 +33,23 @@ static ToFSensors data = {0};
 #define TOF_RF_GAIN      1.030702179f
 #define TOF_RF_OFFSET_MM (-4.644067797f)
 
+/*
+ * Side-wall calibration in the robot's actual mounted geometry.
+ *
+ * These fits use the user's measurements with the robot centerline as the
+ * reference distance. They therefore include the approximately 45-degree
+ * diagonal projection and the approximately 5 mm sensor lateral offset.
+ * This empirical calibration is preferred to assuming the mechanical angle
+ * is exactly 45 degrees, especially for RD where the measured response is
+ * noticeably different from LD.
+ *
+ *   true centerline-to-wall distance = gain * calibrated beam + offset
+ */
+#define TOF_LD_WALL_GAIN       0.719027953f
+#define TOF_LD_WALL_OFFSET_MM  8.414753349f
+#define TOF_RD_WALL_GAIN       0.658701975f
+#define TOF_RD_WALL_OFFSET_MM (-2.599982678f)
+
 static uint16_t calibrate_distance(uint16_t raw, float gain, float offset)
 {
     if (raw == 0xFFFFU)
@@ -144,21 +161,14 @@ void tof_sensors_update(void)
         data.right = 0xFFFFU;
 
     /*
-     * Project the diagonal LD/RD beam onto the side-wall normal.
-     *
-     * The sensors are approximately 45 degrees from the forward axis, so
-     * only cos(45 deg) of the calibrated beam is perpendicular to a side
-     * wall. The sensor origins are approximately 5 mm outboard of the robot
-     * centerline, so that lateral offset is added to obtain the distance
-     * from the robot centerline to the wall.
-     *
-     * This is valid for a straight wall parallel to the robot's travel axis.
-     * The longitudinal position of the diagonal sensor does not affect the
-     * perpendicular distance to such a wall.
+     * Convert the calibrated diagonal beam readings directly into
+     * centerline-to-wall distances using empirical fits from the robot's
+     * actual 45-degree-ish mounting geometry. This absorbs small mechanical
+     * angle/position errors that a pure cos(45) projection cannot capture.
      */
     if (data.front_left_status == 0U) {
-        float distance = VL53_SIDE_SENSOR_LATERAL_OFFSET_MM +
-                         ((float)data.front_left * VL53_SIDE_SENSOR_COS_ANGLE);
+        float distance = TOF_LD_WALL_GAIN * (float)data.front_left +
+                         TOF_LD_WALL_OFFSET_MM;
         if (distance > 8191.0f) distance = 8191.0f;
         data.left_wall_distance = (uint16_t)(distance + 0.5f);
     } else {
@@ -166,8 +176,8 @@ void tof_sensors_update(void)
     }
 
     if (data.front_right_status == 0U) {
-        float distance = VL53_SIDE_SENSOR_LATERAL_OFFSET_MM +
-                         ((float)data.front_right * VL53_SIDE_SENSOR_COS_ANGLE);
+        float distance = TOF_RD_WALL_GAIN * (float)data.front_right +
+                         TOF_RD_WALL_OFFSET_MM;
         if (distance > 8191.0f) distance = 8191.0f;
         data.right_wall_distance = (uint16_t)(distance + 0.5f);
     } else {
